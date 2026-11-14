@@ -1,0 +1,350 @@
+{
+	"info": {
+		"_postman_id": "brewlite-assignment2-collection-id",
+		"name": "BrewLite API - Assignment 2",
+		"description": "Bộ kịch bản kiểm thử toàn diện REST API dự án BrewLite trên Postman, hỗ trợ tự động lưu token và ID đơn hàng giữa các bước.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orderId",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Public - Menu & Sản phẩm",
+			"item": [
+				{
+					"name": "1.1. Lấy danh sách toàn bộ đồ uống",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["products"]
+						},
+						"description": "FR-01: Lấy danh sách sản phẩm kèm danh mục và tồn kho (stock)."
+					},
+					"response": []
+				},
+				{
+					"name": "1.2. Lấy danh mục sản phẩm (Categories)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", "categories"]
+						},
+						"description": "FR-02: Lấy các danh mục (Cà phê: COFFEE, Trà: TEA)."
+					},
+					"response": []
+				},
+				{
+					"name": "1.3. Lấy tùy chọn Size, Topping & Mã khuyến mãi",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/options",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", "options"]
+						},
+						"description": "FR-05 & FR-14: Lấy bảng giá Size, Topping và danh sách mã khuyến mãi."
+					},
+					"response": []
+				},
+				{
+					"name": "1.4. Lấy chi tiết 1 sản phẩm",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", "1"]
+						},
+						"description": "FR-04: Lấy chi tiết sản phẩm theo ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Auth - Xác thực tài khoản",
+			"item": [
+				{
+					"name": "2.1. Đăng ký tài khoản mới",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"sinhvien{{$timestamp}}@sgu.edu.vn\",\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "FR-10: Đăng ký tài khoản khách hàng mới với mật khẩu tối thiểu 6 ký tự."
+					},
+					"response": []
+				},
+				{
+					"name": "2.2. Đăng nhập (Tự động lưu Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.accessToken) {",
+									"    pm.collectionVariables.set('token', res.accessToken);",
+									"    console.log('✅ Đã lưu accessToken vào biến token:', res.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"khachhang@sgu.edu.vn\",\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "FR-11: Đăng nhập tài khoản seed mẫu và tự động gán token vào biến collection."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Orders - Đặt đơn & Lịch sử",
+			"item": [
+				{
+					"name": "3.1. Tạo đơn hàng mới (Kèm mã giảm giá BREWLITE10)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.id) {",
+									"    pm.collectionVariables.set('orderId', res.id);",
+									"    console.log('✅ Đã lưu orderId:', res.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"size\": \"M\",\n      \"toppings\": [\"Trân châu hoàng kim\"],\n      \"qty\": 2\n    }\n  ],\n  \"couponCode\": \"BREWLITE10\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						},
+						"description": "FR-13, FR-14, FR-15: Tạo đơn PENDING, kiểm soát tồn kho qua Optimistic Locking và tự động lưu orderId."
+					},
+					"response": []
+				},
+				{
+					"name": "3.2. Xem lịch sử đơn của tôi (/orders/me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "me"]
+						},
+						"description": "FR-19: Lấy danh sách lịch sử các đơn hàng của tài khoản đang đăng nhập."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Payments - Thanh toán & Idempotency",
+			"item": [
+				{
+					"name": "4.1. Thanh toán đơn hàng (Thành công & Tích điểm)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "idem-key-{{$timestamp}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"WALLET\",\n  \"simulateFailure\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["payments"]
+						},
+						"description": "FR-16, FR-17, FR-18: Thanh toán qua Ví, cập nhật PAID, cộng điểm Loyalty."
+					},
+					"response": []
+				},
+				{
+					"name": "4.2. Kiểm thử Thanh toán Idempotent (Gửi lại cùng key)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "fixed-idempotency-test-key-001"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"WALLET\",\n  \"simulateFailure\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["payments"]
+						},
+						"description": "FR-17: Gửi lặp lại cùng key cố định để chứng minh hệ thống trả về idempotentReplay: true."
+					},
+					"response": []
+				},
+				{
+					"name": "4.3. Mô phỏng thanh toán thất bại (simulateFailure)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "idem-fail-{{$timestamp}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"CARD\",\n  \"simulateFailure\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["payments"]
+						},
+						"description": "FR-18: Mô phỏng lỗi thanh toán, chuyển đơn sang PAYMENT_FAILED mà không xóa tồn kho."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Order State Machine - Hủy đơn & Hoàn kho",
+			"item": [
+				{
+					"name": "5.1. Khách hàng hủy đơn (Hoàn trả tồn kho)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CANCELLED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "status"]
+						},
+						"description": "FR-21 & FR-22: Hủy đơn hàng và tự động hoàn trả số lượng tồn kho (stock) cho sản phẩm."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
